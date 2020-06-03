@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: 'from@example.com'
+  default from: (OmnibotConfig.from_email_local_part + "@" + OmnibotConfig.hostname)
   layout 'mailer'
 end

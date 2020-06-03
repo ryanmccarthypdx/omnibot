@@ -55,4 +55,23 @@ describe User, type: :model do
       expect(test_user.confirmation_code.length).to eq(16)
     end
   end
+
+  context 'after create' do
+    let(:test_user) { FactoryBot.build(:user) }
+    let(:expected_confirmation_link) { OmnibotConfig.full_hostname_with_protocol + "/confirm/iamsixteendigits"}
+
+    before do
+      allow(test_user).to receive(:generate_confirmation_code).and_return('iamsixteendigits')
+    end 
+
+    it 'tells UserMailer to send a welcome email' do
+      expect_any_instance_of(UserMailer).to receive(:welcome_email)
+      test_user.save
+    end
+
+    it 'passes UserMailer the correct confirmation link' do 
+      expect(UserMailer).to receive(:with).with(user_email: test_user.email, confirmation_link: expected_confirmation_link).and_call_original
+      test_user.save
+    end
+  end
 end
