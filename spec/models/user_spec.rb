@@ -8,6 +8,39 @@ describe User, type: :model do
       before { FactoryBot.create(:user) }
       it { should validate_uniqueness_of(:email) }
     end
+
+    context 'email format' do
+      let(:test_user) { FactoryBot.build(:user)}
+      context 'valid emails' do
+        [
+          "abc@d.com",
+          "a@abc.com",
+          "12345678901234567890@1234.12345",
+          "a.b.c.d@1.1",
+          "a_b_c@d.reallylongtopleveldomain"
+        ].each do |test_email|
+          it "allows #{test_email}" do
+            test_user.email = test_email
+            expect(test_user).to be_valid
+          end
+        end
+      end 
+
+      context 'invalid emails' do
+        [
+          ".a@d.com",
+          "a@.gmail.com",
+          "no.at.signs",
+          "a.....z@x.com",
+          "a@a....z.com",
+        ].each do |test_email|
+          it "disallows #{test_email}" do
+            test_user.email = test_email
+            expect(test_user).not_to be_valid
+          end
+        end
+      end
+    end
   end
 
   it { should have_secure_password }
