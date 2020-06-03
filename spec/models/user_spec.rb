@@ -45,33 +45,34 @@ describe User, type: :model do
 
   it { should have_secure_password }
 
-  context 'before create' do
+  context 'callbacks' do
     let(:test_user) { FactoryBot.build(:user)}
 
-    it 'sets a 16-character confirmation code' do
-      expect(test_user.confirmation_code).to be nil
-      test_user.run_callbacks :create
-      expect(test_user.confirmation_code).to be_a(String)
-      expect(test_user.confirmation_code.length).to eq(16)
-    end
-  end
-
-  context 'after create' do
-    let(:test_user) { FactoryBot.build(:user) }
-    let(:expected_confirmation_link) { OmnibotConfig.full_hostname_with_protocol + "/confirm/iamsixteendigits"}
-
-    before do
-      allow(test_user).to receive(:generate_confirmation_code).and_return('iamsixteendigits')
-    end 
-
-    it 'tells UserMailer to send a welcome email' do
-      expect_any_instance_of(UserMailer).to receive(:welcome_email)
-      test_user.save
+    context 'before create' do
+      it 'sets a 16-character confirmation code' do
+        expect(test_user.confirmation_code).to be nil
+        test_user.run_callbacks :create
+        expect(test_user.confirmation_code).to be_a(String)
+        expect(test_user.confirmation_code.length).to eq(16)
+      end
     end
 
-    it 'passes UserMailer the correct confirmation link' do 
-      expect(UserMailer).to receive(:with).with(user_email: test_user.email, confirmation_link: expected_confirmation_link).and_call_original
-      test_user.save
+    context 'after create' do
+      let(:test_confirmation_code) { 'iamsixteendigits' }
+
+      before do
+        allow(test_user).to receive(:generate_confirmation_code).and_return(test_confirmation_code)
+        allow(UserMailer).to receive(:welcome_email).and_call_original
+      end 
+
+      it "tells UserMailer to send a welcome email with the user's email and confirmation code" do
+        test_user.save
+        expect(UserMailer).to have_received(:welcome_email).with(user_email: test_user.email, confirmation_code: test_confirmation_code)
+      end
+
+      it "tells UserMailer to send the email right away" do
+        expect{ test_user.save }.to change{ ActionMailer::Base.deliveries.count }.by 1
+      end
     end
   end
 end

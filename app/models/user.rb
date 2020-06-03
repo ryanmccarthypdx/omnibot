@@ -10,8 +10,7 @@ class User < ApplicationRecord
   after_create :send_welcome_email
   
   def send_welcome_email
-    UserMailer.with(user_email: email,
-                    confirmation_link: confirmation_link).welcome_email.deliver_now
+    UserMailer.welcome_email(user_email: email, confirmation_code: confirmation_code).deliver_now
   end
 
   private
@@ -22,9 +21,5 @@ class User < ApplicationRecord
 
   def generate_confirmation_code
     SecureRandom.hex(8)
-  end
-
-  def confirmation_link
-    OmnibotConfig.full_hostname_with_protocol + "/confirm/" + confirmation_code
   end
 end
